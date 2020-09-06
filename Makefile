@@ -10,7 +10,7 @@ compile-logger:
 build:
 	sudo docker-compose build
 
-deploye: compile-logger build start
+deploye: compile-logger compile-logger build start
 
 logs:
 	sudo docker-compose logs -f
