@@ -1,16 +1,16 @@
 version: "3.5"
 
 services:
-  nginx:
-    container_name: NGINX
-    restart: always
-    build:
-      context: .
-      target: nginx
-    links:
-      - logger:logger
-    ports:
-      - 80:80
+  # nginx:
+  #   container_name: NGINX
+  #   restart: always
+  #   build:
+  #     context: .
+  #     target: nginx
+  #   links:
+  #     - logger:logger
+  #   ports:
+  #     - 80:80
 
   elasticsearch:
     container_name: ELK
@@ -30,7 +30,7 @@ services:
     ports:
       - 9200:9200
     volumes:
-      - ./elasticsearch/data:/usr/share/elasticsearch/data
+      - ./elasticsearch:/usr/share/elasticsearch/data
 
   logger:
     container_name: LOGGER
@@ -42,16 +42,22 @@ services:
       - elasticsearch:elasticsearch
     environment:
       - ELK=elasticsearch:9200
+    ports:
+      - 10001:10001/udp
     depends_on:
       - elasticsearch
 
   grafana:
     container_name: GRAFANA
     restart: always
-    image: grafana/grafana:latest
+    build:
+      context: .
+      target: grafana
     ports:
       - 3000:3000
     volumes:
       - ./grafana:/var/lib/grafana
+    links:
+      - elasticsearch:elasticsearch
     depends_on:
       - elasticsearch

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -19,8 +20,15 @@ func checkError(err error) {
 }
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("critical:", r)
+			os.Exit(1)
+		}
+	}()
+	fmt.Println("logger start", elastic)
 	client := http.DefaultClient
-	ServerAddr, err := net.ResolveUDPAddr("udp", ":10001")
+	ServerAddr, err := net.ResolveUDPAddr("udp", "0.0.0.0:10001")
 	checkError(err)
 	ServerConn, err := net.ListenUDP("udp", ServerAddr)
 	checkError(err)
@@ -29,7 +37,11 @@ func main() {
 		buf := make([]byte, 2048)
 		n, _, err := ServerConn.ReadFromUDP(buf)
 		checkError(err)
-		cleanJSON := buf[bytes.Index(buf, []byte(`{`)):n]
+		index := bytes.Index(buf, []byte(`{`))
+		if index < 0 {
+			continue
+		}
+		cleanJSON := buf[index:n]
 		sentToELK(client, cleanJSON)
 	}
 }
@@ -38,7 +50,7 @@ func sentToELK(c *http.Client, msg []byte) {
 	if elastic == "" {
 		return
 	}
-	io.WriteString(os.Stdout, string(msg))
+	fmt.Println(string(msg))
 	req, err := http.NewRequest(http.MethodPost, elastic+"/nginx/logs", bytes.NewReader(msg))
 	checkError(err)
 	req.Header.Add("content-type", "application/json")
