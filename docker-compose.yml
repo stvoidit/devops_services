@@ -1,0 +1,46 @@
+version: "3.5"
+
+services:
+  nginx:
+    container_name: NGINX
+    restart: always
+    build:
+      context: .
+      target: nginx
+    links:
+      - logger:logger
+    ports:
+      - 80:80
+
+  elasticsearch:
+    container_name: ELK
+    restart: always
+    build:
+      context: .
+      target: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+
+  logger:
+    container_name: LOGGER
+    restart: always
+    build:
+      context: .
+      target: logger
+    links:
+      - elasticsearch:elasticsearch
+    environment:
+      - ELK=elasticsearch:9200
+    depends_on:
+      - elasticsearch
