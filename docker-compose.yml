@@ -44,3 +44,14 @@ services:
       - ELK=elasticsearch:9200
     depends_on:
       - elasticsearch
+
+  grafana:
+    container_name: GRAFANA
+    restart: always
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana:/var/lib/grafana
+    depends_on:
+      - elasticsearch
